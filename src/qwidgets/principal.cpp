@@ -117,6 +117,7 @@ void Principal::remover() {
 }
 
 void Principal::editar() {
+#if FALSE
     auto texto = _idWidget->text();
 
     if (texto.isEmpty()) {
@@ -162,6 +163,7 @@ void Principal::editar() {
 
         delete janela;
     }
+#endif
 }
 
 void Principal::buscar() {

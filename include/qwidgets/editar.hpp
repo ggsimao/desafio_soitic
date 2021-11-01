@@ -1,22 +1,6 @@
 #pragma once
 
-#include <assert.h>
-
-#include <QApplication>
-#include <QDialog>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QRegExpValidator>
-#include <QVBoxLayout>
-#include <filme.hpp>
-#include <iostream>
-#include <locadora.hpp>
-#include <string>
-#include <variant>
 #include <qwidgets/adicionar.hpp>
-
-using variant = std::variant<Filme, std::string>;
 
 class Editar : public QDialog {
    public:
