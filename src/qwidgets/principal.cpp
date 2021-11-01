@@ -37,12 +37,6 @@ Principal::Principal(QWidget *pai) : QWidget(pai) {
 }
 
 void Principal::adicionar() {
-    _tabela->clear();
-    int initialCount = _tabela->rowCount();
-    for (int i = 0; i < initialCount; i++) {
-        _tabela->removeRow(0);
-    }
-
     if (_categoria == nulo) {
         Erro *janela = new Erro("Escolha o que adicionar.");
         janela->setGeometry(500, 500, 200, 50);
@@ -55,14 +49,26 @@ void Principal::adicionar() {
         janela->setWindowTitle("Adicionar");
         janela->exec();
 
-        switch (_categoria) {
-            case filme:
-                Locadora::adicionarFilme(
-                    std::get<Filme>(janela->recuperarDado()));
-                break;
-            case diretor:
+        if (janela->confirmadoSenaoCancelado()) {
+            if (_categoria == filme) {
+                Filme filme = std::get<Filme>(janela->recuperarDado());
+                for (const auto id : filme.idDiretores()) {
+                    try {
+                        Locadora::buscarDiretor(id);
+                    } catch (std::out_of_range oor) {
+                        Erro *janela = new Erro("Id inválido!");
+                        janela->setGeometry(500, 500, 200, 50);
+                        janela->setWindowTitle("Erro");
+                        janela->exec();
+                        delete janela;
+                        return;
+                    }
+                }
+                Locadora::adicionarFilme(filme);
+            } else {
                 Locadora::adicionarDiretor(
                     std::get<std::string>(janela->recuperarDado()));
+            }
         }
 
         delete janela;
@@ -70,11 +76,6 @@ void Principal::adicionar() {
 }
 
 void Principal::remover() {
-    _tabela->clear();
-    int initialCount = _tabela->rowCount();
-    for (int i = 0; i < initialCount; i++) {
-        _tabela->removeRow(0);
-    }
     auto texto = _idWidget->text();
 
     if (texto.isEmpty()) {
@@ -115,21 +116,9 @@ void Principal::remover() {
     }
 }
 
-void Principal::editar() {
-    _tabela->clear();
-    int initialCount = _tabela->rowCount();
-    for (int i = 0; i < initialCount; i++) {
-        _tabela->removeRow(0);
-    }
-}
+void Principal::editar() {}
 
 void Principal::buscar() {
-    _tabela->clear();
-    int initialCount = _tabela->rowCount();
-    for (int i = 0; i < initialCount; i++) {
-        _tabela->removeRow(0);
-    }
-
     auto texto = _idWidget->text();
 
     if (_categoria == nulo) {
@@ -245,16 +234,19 @@ void Principal::setDiretor() {
 }
 
 std::string Principal::nomesDosDiretores(Filme filme) {
-    std::set<ushort> idDiretores = filme.idDiretores();
+    std::set<ushort> setDiretores = filme.idDiretores();
+    std::vector<ushort> idDiretores =
+        std::vector<ushort>(setDiretores.begin(), setDiretores.end());
     if (idDiretores.size() == 0) return "";
 
     std::string listaDiretores;
-    for (auto it = idDiretores.begin(); it != idDiretores.end()--; it++) {
-        listaDiretores.insert(0, ", " + Locadora::buscarDiretor(*it));
-        // listaDiretores.insert(0, ", " + *it);
+    for (int i = 0; i < idDiretores.size() - 1; i++) {
+        listaDiretores.insert(0,
+                              ", " + Locadora::buscarDiretor(idDiretores[i]));
     }
-    listaDiretores.insert(0,
-                          "" + Locadora::buscarDiretor(*(idDiretores.end()--)));
+
+    listaDiretores.insert(
+        0, "" + Locadora::buscarDiretor(idDiretores[idDiretores.size() - 1]));
 
     return listaDiretores;
 }

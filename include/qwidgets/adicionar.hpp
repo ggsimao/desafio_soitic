@@ -23,6 +23,7 @@ class Adicionar : public QDialog {
     Adicionar(Categoria categoria, QDialog* pai = nullptr);
     virtual ~Adicionar(){};
 
+    bool confirmadoSenaoCancelado();
     variant recuperarDado();
 
    private slots:
@@ -35,5 +36,7 @@ class Adicionar : public QDialog {
     Categoria _categoria;
     std::vector<QLineEdit*> _idDiretores;
     QLineEdit* _nome;
+    std::vector<ushort> _idsSalvos;
+    std::string _nomeSalvo;
     QGridLayout* _grid;
 };

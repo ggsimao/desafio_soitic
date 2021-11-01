@@ -40,7 +40,7 @@ void Adicionar::adicionarDiretor() {
     delete widCan;
 
     auto* diretorLabel = new QLabel("Diretor (id): ", this);
-    auto idLine = new QLineEdit("", this);
+    auto* idLine = new QLineEdit("", this);
     idLine->setValidator(new QRegExpValidator(QRegExp("[0-9]*"), idLine));
     _grid->addWidget(diretorLabel, _grid->rowCount(), 0);
     _grid->addWidget(idLine, _grid->rowCount() - 1, 1);
@@ -62,6 +62,10 @@ void Adicionar::adicionarDiretor() {
 }
 
 void Adicionar::adicionar() {
+    _nomeSalvo = _nome->text().toStdString();
+    for (const auto id : _idDiretores) {
+        _idsSalvos.push_back(id->text().toUShort());
+    }
     _confirmadoSenaoCancelado = true;
     this->close();
 }
@@ -75,15 +79,12 @@ variant Adicionar::recuperarDado() {
     assert(_categoria != nulo);
     variant dado;
     if (_categoria == filme) {
-        std::string nome = _nome->text().toStdString();
-        std::vector<ushort> ids;
-        for (const auto id : _idDiretores) {
-            ids.push_back(id->text().toUShort());
-        }
-        Filme filme(nome, ids);
+        Filme filme(_nomeSalvo, _idsSalvos);
         dado = filme;
     } else {
-        dado = _nome->text().toStdString();
+        dado = _nomeSalvo;
     }
     return dado;
 }
+
+bool Adicionar::confirmadoSenaoCancelado() { return _confirmadoSenaoCancelado; }
