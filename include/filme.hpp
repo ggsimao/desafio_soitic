@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -10,12 +11,14 @@ class Filme {
     Filme();
     Filme(std::string nome);
     Filme(std::string nome, ushort idDiretores...);
+    Filme(std::string nome, std::vector<ushort> idDiretores);
+    Filme(std::string nome, std::set<ushort> idDiretores);
     ~Filme(){};
 
-    std::vector<ushort> idDiretores();
+    std::set<ushort> idDiretores();
     std::string nome();
 
    private:
-    std::vector<ushort> _idDiretores;
+    std::set<ushort> _idDiretores;
     std::string _nome;
 };

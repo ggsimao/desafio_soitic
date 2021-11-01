@@ -8,9 +8,9 @@ Principal::Principal(QWidget *pai) : QWidget(pai) {
     auto *texto = new QLabel("ID selecionado: ", this);
     auto *opcFilme = new QRadioButton("Filme", this);
     auto *opcDiretor = new QRadioButton("Diretor", this);
-    this->_tabela = new QTableWidget(this);
+    _tabela = new QTableWidget(this);
 
-    this->_idWidget = new QLineEdit("", this);
+    _idWidget = new QLineEdit("", this);
 
     auto *grid = new QGridLayout(this);
     grid->addWidget(adi, 0, 0);
@@ -20,9 +20,9 @@ Principal::Principal(QWidget *pai) : QWidget(pai) {
     grid->addWidget(texto, 0, 4);
     grid->addWidget(opcFilme, 1, 0);
     grid->addWidget(opcDiretor, 2, 0);
-    grid->addWidget(this->_tabela, 1, 1, 2, 5);
+    grid->addWidget(_tabela, 1, 1, 2, 5);
 
-    grid->addWidget(this->_idWidget, 0, 5);
+    grid->addWidget(_idWidget, 0, 5);
 
     connect(adi, &QPushButton::clicked, this, &Principal::adicionar);
     connect(edit, &QPushButton::clicked, this, &Principal::editar);
@@ -31,23 +31,51 @@ Principal::Principal(QWidget *pai) : QWidget(pai) {
     connect(opcFilme, &QRadioButton::clicked, this, &Principal::setFilme);
     connect(opcDiretor, &QRadioButton::clicked, this, &Principal::setDiretor);
 
-    this->_tabela->horizontalHeader()->setSectionResizeMode(
-        QHeaderView::Stretch);
+    _tabela->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    this->_idWidget->setValidator(
-        new QRegExpValidator(QRegExp("[0-9]*"), this->_idWidget));
+    _idWidget->setValidator(new QRegExpValidator(QRegExp("[0-9]*"), _idWidget));
 }
 
 void Principal::adicionar() {
-    Adicionar *janela = new Adicionar(this->_categoria);
-    janela->setGeometry(500, 500, 100, 100);
-    janela->setWindowTitle("Adicionar");
-    janela->exec();
-    delete janela;
+    _tabela->clear();
+    int initialCount = _tabela->rowCount();
+    for (int i = 0; i < initialCount; i++) {
+        _tabela->removeRow(0);
+    }
+
+    if (_categoria == nulo) {
+        Erro *janela = new Erro("Escolha o que adicionar.");
+        janela->setGeometry(500, 500, 200, 50);
+        janela->setWindowTitle("Erro");
+        janela->exec();
+        delete janela;
+    } else {
+        Adicionar *janela = new Adicionar(_categoria);
+        janela->setGeometry(500, 500, 100, 100);
+        janela->setWindowTitle("Adicionar");
+        janela->exec();
+
+        switch (_categoria) {
+            case filme:
+                Locadora::adicionarFilme(
+                    std::get<Filme>(janela->recuperarDado()));
+                break;
+            case diretor:
+                Locadora::adicionarDiretor(
+                    std::get<std::string>(janela->recuperarDado()));
+        }
+
+        delete janela;
+    }
 }
 
 void Principal::remover() {
-    auto texto = this->_idWidget->text();
+    _tabela->clear();
+    int initialCount = _tabela->rowCount();
+    for (int i = 0; i < initialCount; i++) {
+        _tabela->removeRow(0);
+    }
+    auto texto = _idWidget->text();
 
     if (texto.isEmpty()) {
         Erro *janela = new Erro("Insira um id.");
@@ -55,7 +83,7 @@ void Principal::remover() {
         janela->setWindowTitle("Erro");
         janela->exec();
         delete janela;
-    } else if (this->_categoria == nulo) {
+    } else if (_categoria == nulo) {
         Erro *janela = new Erro("Escolha o que remover.");
         janela->setGeometry(500, 500, 200, 50);
         janela->setWindowTitle("Erro");
@@ -63,7 +91,7 @@ void Principal::remover() {
         delete janela;
     } else {
         int idABuscar = texto.toInt();
-        if (this->_categoria == filme) {
+        if (_categoria == filme) {
             try {
                 Locadora::removerFilme(idABuscar);
             } catch (std::out_of_range oor) {
@@ -87,50 +115,83 @@ void Principal::remover() {
     }
 }
 
-void Principal::editar() {}
+void Principal::editar() {
+    _tabela->clear();
+    int initialCount = _tabela->rowCount();
+    for (int i = 0; i < initialCount; i++) {
+        _tabela->removeRow(0);
+    }
+}
 
 void Principal::buscar() {
-    auto texto = this->_idWidget->text();
+    _tabela->clear();
+    int initialCount = _tabela->rowCount();
+    for (int i = 0; i < initialCount; i++) {
+        _tabela->removeRow(0);
+    }
 
-    if (this->_categoria == nulo) {
+    auto texto = _idWidget->text();
+
+    if (_categoria == nulo) {
         Erro *janela = new Erro("Escolha o que buscar.");
         janela->setGeometry(500, 500, 200, 50);
         janela->setWindowTitle("Erro");
         janela->exec();
         delete janela;
     } else if (texto.isEmpty()) {
-        if (this->_categoria == filme) {
+        if (_categoria == filme) {
             std::vector<FilmeValor> listaFilmes = Locadora::buscarTodosFilmes();
             for (int i = 0; i < listaFilmes.size(); i++) {
                 Filme filme = listaFilmes[i].second;
 
-                this->_tabela->insertRow(i);
-                this->_tabela->itemAt(i, 0)->setText(
-                    QString::fromStdString(filme.nome()));
+                _tabela->insertRow(i);
 
-                this->_tabela->itemAt(i, 1)->setText(
-                    QString::fromStdString(this->nomesDosDiretores(filme)));
+                _tabela->setItem(
+                    i, 0,
+                    new QTableWidgetItem(QString::fromStdString(filme.nome())));
 
-                this->_tabela->itemAt(i, 2)->setText(
-                    QString::number(listaFilmes[i].first));
-                // this->_tabela->itemAt(i, 0)->text() = listaFilmes[i].second;
+                _tabela->setItem(i, 1,
+                                 new QTableWidgetItem(QString::fromStdString(
+                                     this->nomesDosDiretores(filme))));
+
+                _tabela->setItem(i, 2,
+                                 new QTableWidgetItem(
+                                     QString::number(listaFilmes[i].first)));
             }
         } else {
-            // try {
-            //     Locadora::removerDiretor(idABuscar);
-            // } catch (std::out_of_range oor) {
-            //     Erro *janela = new Erro("Id inválido!");
-            //     janela->setGeometry(500, 500, 200, 50);
-            //     janela->setWindowTitle("Erro");
-            //     janela->exec();
-            //     delete janela;
-            // }
+            std::vector<DiretorValor> listaDiretores =
+                Locadora::buscarTodosDiretores();
+            for (int i = 0; i < listaDiretores.size(); i++) {
+                std::string diretor = listaDiretores[i].second;
+
+                int linhas = _tabela->rowCount();
+
+                _tabela->insertRow(linhas);
+
+                _tabela->setItem(
+                    linhas, 0,
+                    new QTableWidgetItem(QString::fromStdString(diretor)));
+                _tabela->setItem(linhas, 1,
+                                 new QTableWidgetItem(
+                                     QString::number(listaDiretores[i].first)));
+            }
         }
     } else {
         int idABuscar = texto.toInt();
-        if (this->_categoria == filme) {
+        if (_categoria == filme) {
             try {
-                Locadora::removerFilme(idABuscar);
+                Filme filme = Locadora::buscarFilme(idABuscar);
+
+                _tabela->setItem(
+                    0, 0,
+                    new QTableWidgetItem(QString::fromStdString(filme.nome())));
+
+                _tabela->setItem(0, 1,
+                                 new QTableWidgetItem(QString::fromStdString(
+                                     this->nomesDosDiretores(filme))));
+
+                _tabela->setItem(
+                    0, 2, new QTableWidgetItem(QString::number(idABuscar)));
             } catch (std::out_of_range oor) {
                 Erro *janela = new Erro("Id inválido!");
                 janela->setGeometry(500, 500, 200, 50);
@@ -140,7 +201,13 @@ void Principal::buscar() {
             }
         } else {
             try {
-                Locadora::removerDiretor(idABuscar);
+                std::string diretor = Locadora::buscarDiretor(idABuscar);
+
+                _tabela->setItem(
+                    0, 0,
+                    new QTableWidgetItem(QString::fromStdString(diretor)));
+                _tabela->setItem(
+                    0, 1, new QTableWidgetItem(QString::number(idABuscar)));
             } catch (std::out_of_range oor) {
                 Erro *janela = new Erro("Id inválido!");
                 janela->setGeometry(500, 500, 200, 50);
@@ -150,21 +217,44 @@ void Principal::buscar() {
             }
         }
     }
-
-    this->_tabela;
 }
 
 void Principal::setFilme() {
-    this->_categoria = filme;
-    this->_tabela->setColumnCount(3);
-    this->_tabela->setHorizontalHeaderLabels(
+    _tabela->clear();
+    int initialCount = _tabela->rowCount();
+    for (int i = 0; i < initialCount; i++) {
+        _tabela->removeRow(0);
+    }
+
+    _categoria = filme;
+    _tabela->setColumnCount(3);
+    _tabela->setHorizontalHeaderLabels(
         QStringList({"Nome", "Diretores", "Id"}));
 }
 
 void Principal::setDiretor() {
-    this->_categoria = diretor;
-    this->_tabela->setColumnCount(2);
-    this->_tabela->setHorizontalHeaderLabels(QStringList({"Nome", "Id"}));
+    _tabela->clear();
+    int initialCount = _tabela->rowCount();
+    for (int i = 0; i < initialCount; i++) {
+        _tabela->removeRow(0);
+    }
+
+    _categoria = diretor;
+    _tabela->setColumnCount(2);
+    _tabela->setHorizontalHeaderLabels(QStringList({"Nome", "Id"}));
 }
 
-std::string Principal::nomesDosDiretores(Filme filme) { return ""; }
+std::string Principal::nomesDosDiretores(Filme filme) {
+    std::set<ushort> idDiretores = filme.idDiretores();
+    if (idDiretores.size() == 0) return "";
+
+    std::string listaDiretores;
+    for (auto it = idDiretores.begin(); it != idDiretores.end()--; it++) {
+        listaDiretores.insert(0, ", " + Locadora::buscarDiretor(*it));
+        // listaDiretores.insert(0, ", " + *it);
+    }
+    listaDiretores.insert(0,
+                          "" + Locadora::buscarDiretor(*(idDiretores.end()--)));
+
+    return listaDiretores;
+}

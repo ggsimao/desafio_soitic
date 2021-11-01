@@ -9,6 +9,7 @@
 #include <QRegExpValidator>
 #include <QTableWidget>
 #include <QWidget>
+#include <iostream>
 #include <locadora.hpp>
 #include <qwidgets/adicionar.hpp>
 #include <qwidgets/erro.hpp>
