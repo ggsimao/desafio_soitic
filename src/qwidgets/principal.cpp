@@ -116,7 +116,53 @@ void Principal::remover() {
     }
 }
 
-void Principal::editar() {}
+void Principal::editar() {
+    auto texto = _idWidget->text();
+
+    if (texto.isEmpty()) {
+        Erro *janela = new Erro("Insira um id.");
+        janela->setGeometry(500, 500, 200, 50);
+        janela->setWindowTitle("Erro");
+        janela->exec();
+        delete janela;
+    } else if (_categoria == nulo) {
+        Erro *janela = new Erro("Escolha o que editar.");
+        janela->setGeometry(500, 500, 200, 50);
+        janela->setWindowTitle("Erro");
+        janela->exec();
+        delete janela;
+    } else {
+        int idABuscar = texto.toInt();
+        Editar *janela = new Editar(_categoria, idABuscar);
+        janela->setGeometry(500, 500, 100, 100);
+        janela->setWindowTitle("Editar");
+        janela->exec();
+
+        if (janela->confirmadoSenaoCancelado()) {
+            if (_categoria == filme) {
+                Filme filme = std::get<Filme>(janela->recuperarDado());
+                for (const auto id : filme.idDiretores()) {
+                    try {
+                        Locadora::buscarDiretor(id);
+                    } catch (std::out_of_range oor) {
+                        Erro *janela = new Erro("Id inválido!");
+                        janela->setGeometry(500, 500, 200, 50);
+                        janela->setWindowTitle("Erro");
+                        janela->exec();
+                        delete janela;
+                        return;
+                    }
+                }
+                Locadora::editarFilme(idABuscar, filme);
+            } else {
+                Locadora::editarDiretor(
+                    idABuscar, std::get<std::string>(janela->recuperarDado()));
+            }
+        }
+
+        delete janela;
+    }
+}
 
 void Principal::buscar() {
     auto texto = _idWidget->text();
